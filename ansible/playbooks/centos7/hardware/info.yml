@@ -1,0 +1,109 @@
+---
+- hosts: all
+  tasks:
+
+  - name: Installing additional soft
+    yum: name={{ item }} state=present
+    with_items: 
+    - lshw
+    - smartmontools
+
+  - shell: echo "========" > /root/server.info
+
+  - shell: echo {{ ansible_hostname }} >> /root/server.info
+
+  - shell: echo "====================================" >> /root/server.info
+
+  - name: Show Motherboard Details
+    shell: echo  "MATHERBOARD MANUFACTURER:" {{ ansible_system_vendor }} >> /root/server.info
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - shell: echo  "MATHERBOARD PRODUCT NAME:" {{ ansible_product_name }} >> /root/server.info
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - shell: echo "MATHERBOARD VERSION:" {{ ansible_product_version }}  >> /root/server.info 
+
+  - shell: echo "===================================" >> /root/server.info
+  
+  - name: Processor info 
+    shell: pc_name=`cat /proc/cpuinfo | grep 'model name' | tail -n 1 | awk '{$1=$2=""; print $0}'`; echo "PROCESSOR NAME" $pc_name >> /root/server.info
+    #shell: echo "PROCESSOR NAME:" {{ ansible_processor }} >> /root/server.info  
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+  
+  - name: Proc Cores
+    shell: echo "CPUS QUANTITY:" {{ ansible_processor_cores }} >> /root/server.info
+    
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - name: VCPUS Quantity 
+    shell: echo  "VCPUS QUANTITY:" {{ ansible_processor_vcpus }} >> /root/server.info
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - name: CPUS Threads Per Core
+    shell: echo "CPUS THREADS PER CORE:" {{ ansible_processor_cores }}  >> /root/server.info
+
+  - shell: echo "===================================" >> /root/server.info
+  
+  - name: RAM 
+    shell: echo "TOTAL INSTALLED RAM in MB:" {{ ansible_memtotal_mb }} >> /root/server.info
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - name: Emty RAM slots 
+    shell: free_slots=`dmidecode --type 17 | grep "No Module Installed" | wc -l`; echo "EMPTY RAM SLOTS:" $free_slots >> /root/server.info
+   
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - name: INSTALLED RAM slots
+    shell: busy_slots=`dmidecode  -t 17  | grep "Size" | grep -v "No Module" | wc -l`; echo "INSTALLED RAM slots:" $busy_slots >> /root/server.info
+   
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - name: DETAIL RAM DESCRIPTION
+    shell: dmidecode  -t 17  | grep "Size\|Serial Number\|Manufacturer" >> /root/server.info
+
+  - shell: echo "===================================" >> /root/server.info
+
+  - shell: family=`smartctl -a /dev/{{ item.key }} | grep 'Model Family' | awk '{$1=$2=""; print $0}'`;echo "DISK FAMILY:" {{ item.key }} $family >> /root/server.info
+    with_dict: ansible_devices
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - shell: echo "DISK NAME:" {{ item.key }} >> /root/server.info
+    with_dict: ansible_devices
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - shell: disk_cap=`smartctl -a /dev/{{ item.key }} | grep 'User Capacity' | awk '{$1=$2=""; print $0}'`;echo "DISK CAPACITY:" $disk_cap >> /root/server.info 
+    with_dict: ansible_devices
+  #- shell: echo "DISK CAPACITY:" {{ item.key }} = {{ item.value.size }} >> /root/server.info
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+
+  - shell: echo "DISK MODEL:" {{ item.key }} = {{ item.value.model }} >> /root/server.info
+    with_dict: ansible_devices
+
+  - shell: echo "-----------------------------------" >> /root/server.info
+  
+  - shell: serial=`smartctl -a /dev/{{ item.key }} | grep 'Serial Number' | awk '{print $3}'`; echo "DISK SERIAL" {{ item.key }} $serial >> /root/server.info
+    with_dict: ansible_devices
+
+  - shell: echo "===================================" >> /root/server.info
+
+  - name: Smartctl test
+    shell: s_test=`smartctl -a /dev/{{ item.key }} | grep "Reallocated_Sector\|Power_On_Hours\|Current_Pending_Sector"`; echo -e "DISK "{{ item.key }}" \n $s_test" >> /root/server.info 
+    with_dict: ansible_devices
+
+  - name: The Server hardware details located here /root/server.info
+    shell: cat /root/server.info
+    register: server_info
+  
+  - name: Print Hardware Details
+    debug: var=server_info.stdout_lines
+
+
+

@@ -1,0 +1,84 @@
+- name: Install software
+  apt: pkg={{ item }} state=installed
+  with_items:
+     - ntpdate
+     - nano
+     - python-selinux
+     - mc
+     - python-mysqldb
+     - iptables-persistent
+     - libsys-syslog-perl
+     - libsnmp-base
+     - sysstat
+     - build-essential 
+     - automake
+     - autoconf
+     - libtool
+     - make 
+     - geoip-bin
+     - screen
+     - imagemagick
+     - nload
+     - mlocate
+     - vim
+     - openssh-client
+     - rsync
+     - net-tools
+     - perl
+     - bzip2
+     - curl
+     - libgeoip-dev
+     - libssl-dev
+     - libpng12-dev
+     - libjpeg8-dev
+     - fail2ban
+
+
+- name: Set Time to UTC
+  copy: src=/usr/share/zoneinfo/UTC dest=/etc/localtime force=yes
+ 
+- name: Update date
+  shell: /usr/sbin/ntpdate -bs 66.250.131.190 64.136.200.96 132.236.56.250
+  ignore_errors: True
+
+- name: Configure resolv.conf ( add 8.8.8.8 )
+  shell: echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
+- name: Configure resolv.conf ( add 208.67.222.222 )
+  shell: echo "nameserver 208.67.222.222" >> /etc/resolv.conf
+
+- name: Clear motd
+  shell: echo -n > /etc/motd
+
+- name: Configure /etc/rc.local
+  shell: echo "echo \`last |head ;date\` | mail -s 'server `hostname` is up' notify@notify.king-support.com" >> /etc/rc.local
+
+- name: Configure /etc/ssh/sshd_config
+  shell: "{{ item }}"
+  with_items:
+    - "echo ChallengeResponseAuthentication no >> /etc/ssh/sshd_config"
+    - "echo PasswordAuthentication yes >> /etc/ssh/sshd_config"
+    - "echo PermitRootLogin without-password >> /etc/ssh/sshd_config"
+    - "echo Port 22 >> /etc/ssh/sshd_config"
+    - "echo Port 222 >> /etc/ssh/sshd_config"
+    - "echo MaxStartups 10:30:60 >> /etc/ssh/sshd_config"
+    - "perl -i -pe 's/^#?UseDNS yes/UseDNS no/' /etc/ssh/sshd_config"
+
+- name: Create /root/.ssh/
+  file: path=/root/.ssh/ state=directory mode=0755
+
+- name: Copy SSH authorized keys
+  get_url: url=http://data.king-support.com/distfiles/defaults/authorized_keys dest=/root/.ssh/authorized_keys force=yes
+
+- name: Restart SSHD
+  service: name=ssh state=restarted
+
+- name: Disable Selinux
+  selinux: state=disabled
+  ignore_errors: True
+
+- name: Install fail2ban config
+  template: src=files/jail.local.j2 dest=/etc/fail2ban/jail.local
+
+- name: reload fail2ban
+  service: name=fail2ban state=reloaded

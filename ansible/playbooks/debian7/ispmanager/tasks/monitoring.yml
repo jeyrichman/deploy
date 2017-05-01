@@ -1,0 +1,68 @@
+- name: Mkdir /home/admin/apache_mon/
+  file: path=/home/admin/apache_mon/ state=directory mode=0755
+
+- name: Download test.cgi
+  get_url: url={{ item.url }} dest={{ item.dest }} force=no
+  with_items:
+     - { url: 'http://data.king-support.com/distfiles/defaults/test.cgi/postest.cgi', dest: '/home/admin/apache_mon/postest.cgi'}
+     - { url: 'http://data.king-support.com/distfiles/defaults/test.cgi/xtest.php', dest: '/home/admin/apache_mon/xtest.php'}
+     - { url: 'http://data.king-support.com/distfiles/defaults/test.cgi/xtestnew.cgi', dest: '/home/admin/apache_mon/xtestnew.cgi'}
+     - { url: 'http://data.king-support.com/distfiles/defaults/test.cgi/zend.php', dest: '/home/admin/apache_mon/zend.php'}
+
+- name: Change chmod for cgi files
+  file: path={{ item }} state=file mode=755
+  with_items:
+     - /home/admin/apache_mon/postest.cgi
+     - /home/admin/apache_mon/xtestnew.cgi
+
+- name: Add user to /root/.my.cnf
+  shell: echo 'user=root' >> /root/.my.cnf
+
+- name: Create test database
+  mysql_db: name=test state=present
+
+- name: Create mysql test user
+  mysql_user: name=test password= priv=test.*:ALL state=present
+
+- name: Install software monitoring
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - rrdtool
+    - smartmontools
+    - libnet-https-nb-perl
+
+- name: Downloading work.tar.gz
+  local_action: get_url url=http://data.king-support.com/distfiles/work7.tar.gz dest=files/work7.tar.gz force=yes
+
+- name: Unpack work.tar.gz
+  unarchive: src=files/work7.tar.gz dest=/usr/ force=yes
+
+- name: Configure perl monitoring
+  shell: "{{ item }}"
+  with_items:
+    - "mv /usr/work7/ /usr/work/"
+    - "mv /usr/work/scripts/mon/conf/mon.debian7isp /usr/work/scripts/mon/conf/mon.conf.linux"
+    - "/usr/work/scripts/mon/rrdtool/rrd_create_host.pl"
+    - "ln -s /usr/work/scripts/mon/rrdtool/web/ /home/admin/apache_mon/web"
+
+- name: list disks present in the system
+  shell: smartctl --scan | awk '{print $1}'
+  register: disks
+
+- name: check if disks support SMART
+  shell: "smartctl -s on {{ item }} ; smartctl -i {{ item }} | grep -qc 'SMART support is: Enabled'"
+  with_items: disks.stdout_lines
+  register: smart
+  ignore_errors: True
+
+- name: Remove smartmontools ( not needed )
+  apt: pkg=smartmontools state=absent
+  when: smart|failed
+
+- name: Create smartd configuration file
+  template: src=files/smartd.conf dest=/etc/smartd.conf owner=root group=root mode=0644
+  when: smart|success
+
+- name: Enable and restart smartd service
+  service: name=smartd state=restarted enabled=yes
+  when: smart|success

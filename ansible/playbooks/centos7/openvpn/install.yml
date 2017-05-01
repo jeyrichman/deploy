@@ -1,0 +1,69 @@
+---
+- hosts: all
+
+  tasks:
+    - set_fact: iptables_path=/usr/sbin/iptables
+      when: ansible_distribution_major_version == "7" and ansible_os_family == "RedHat" 
+    - set_fact: iptablessave_path=/usr/sbin/iptables-save
+      when: ansible_distribution_major_version == "7" and ansible_os_family == "RedHat" 
+    - set_fact: rpmforge_path=http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.3-1.el7.rf.x86_64.rpm
+      when: ansible_distribution_major_version == "7" and ansible_os_family == "RedHat" 
+    - set_fact: openvpn_service_name=openvpn@openvpn.service
+
+    - assert: { that: "'{{ ansible_distribution_major_version }}' == '7' and '{{ ansible_os_family }}' == 'RedHat'" }
+
+    - name: Downloading RPM-forge repo
+      get_url: url={{ rpmforge_path }} dest=/tmp/rpm-forge.rpm force=no
+
+    - name: Installing RPM-forge repo
+      command: rpm -ivh --replacepkgs /tmp/rpm-forge.rpm creates=/etc/yum.repos.d/rpmforge.repo
+
+    - name: Installing EPEL repo
+      yum: name=epel-release state=present
+      
+    - name: Installing openvpn easy-rsa iptables-services
+      yum: name={{ item }} state=present
+      with_items:
+        - openvpn
+        - easy-rsa
+        - iptables-services
+      
+    - name: Downloading archive
+      unarchive: src=files/openvpn_linux.tar.gz dest=/etc/ force=yes
+
+    - name: Changing local IP
+      lineinfile: dest=/etc/openvpn/openvpn.conf state=present regexp="^local"  line="local {{ ansible_default_ipv4.address }}"
+
+    - name: Changing remote IP
+      lineinfile: dest=/etc/openvpn/client/client.ovpn state=present regexp="^remote" line="remote {{ ansible_default_ipv4.address }}"
+
+    - name: Generating certificates
+      copy: src=files/generate_keys.sh dest=/etc/openvpn/generate_keys.sh owner=root group=root mode=0755
+
+    - name: Copy script to server
+      command: /etc/openvpn/generate_keys.sh
+
+    - name: Configuring sysctl
+      sysctl: name="net.ipv4.ip_forward" value=1 sysctl_set=yes
+      ignore_errors: yes
+
+    - name: Get NAT iptables rules
+      shell: "{{ iptables_path }} -nL -t nat"
+      register: iptablesrulesnat
+      always_run: yes
+
+    - name: Configuring NAT iptables
+      command: "{{ iptables_path }} -t nat -I POSTROUTING -s 10.168.0.1/24 -j MASQUERADE -m comment --comment 'OpenVPN'"
+      when: iptablesrulesnat.stdout.find("OpenVPN") == -1
+
+    - name: Saving iptables rules
+      shell: "{{ iptablessave_path }} > /etc/sysconfig/iptables"
+
+    - name: Service iptables restart
+      service: name=iptables state=restarted enabled=yes
+
+    - name: Create symlink for openvpn service
+      file: src=/lib/systemd/system/openvpn\@.service dest=/etc/systemd/system/multi-user.target.wants/{{openvpn_service_name}} state=link owner=root group=root
+
+    - name: Start openvpn now (systemd)
+      service: name={{openvpn_service_name}} state=started

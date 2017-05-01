@@ -1,0 +1,35 @@
+- set_fact: htpasswd_path=/etc/squid/htpasswd
+
+- assert: { that: "'{{ ansible_distribution_major_version }}' == '6' and '{{ ansible_os_family }}' == 'RedHat'" }
+
+- name: Install squid
+  yum: name=squid state=latest
+
+- name: Copy qquid config
+  copy: src=files/squid.conf dest=/etc/squid/squid.conf
+
+- name: Create directory for additional users
+  file: path=/etc/squid/users state=directory
+
+- name: Copy script generate_user.py to server 
+  copy: src=files/generate_user.py dest=/etc/squid/generate_user.py owner=root group=root mode=0755
+
+- name: Add All IPs to squid conf
+  command: /etc/squid/generate_user.py {{ item }}
+  with_items:
+              - "{{ ansible_all_ipv4_addresses }}"
+  when: ansible_all_ipv4_addresses is defined
+  
+- name: Service start
+  service: name=squid state=started
+
+- name: Service enable
+  service: name=squid enabled=yes
+
+- name: The squid passwords located here /etc/squid/passwd_holder
+  shell: cat /etc/squid/passwd_holder
+  register: squidpasswd
+
+- name: Print squid passwords
+  debug: var=squidpasswd.stdout_lines
+

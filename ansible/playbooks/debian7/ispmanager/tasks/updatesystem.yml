@@ -1,0 +1,20 @@
+#- name: Add Multimedia Repo
+#  apt_repository: repo='deb http://www.deb-multimedia.org wheezy main non-free' state=present
+- name: Add ISPsystem Base repo
+  apt_repository: repo='deb http://download.ispsystem.com/repo/debian stable-wheezy main' state=present
+
+- name: Add Nginx repository 
+  apt_repository: repo='deb http://nginx.org/packages/debian/ wheezy nginx' state=present
+
+- set_fact: key_path=http://nginx.org/keys/nginx_signing.key
+
+- name: Downloading Nginx Key
+  get_url: url={{ key_path }} dest=/tmp/nginx_signing.key force=no
+
+- name: Add nginx Public key
+  command: apt-key add /tmp/nginx_signing.key
+
+- name: update apt cache
+  apt: update_cache=yes
+  register: update_cache
+

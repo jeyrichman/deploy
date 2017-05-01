@@ -1,0 +1,14 @@
+- name: Setup crontab ( sync )
+  cron: name="sync" job="sync"
+
+- name: Setup crontab ( GeoIP )
+  cron: name="GeoIP" minute="0" hour="5" day="6" job="cd /usr/share/GeoIP/ > /dev/null 2>&1 && wget -q http://data.king-support.com/distfiles/Latest/GeoIP.dat.gz -O /usr/share/GeoIP/GeoIP.dat.gz && gunzip -f GeoIP.dat.gz"
+
+- name: Setup crontab ( ntpdate )
+  cron: name="ntpdate" minute="22" job="sleep 33; /usr/sbin/ntpdate -bs 0.us.pool.ntp.org 0.nl.pool.ntp.org 1.us.pool.ntp.org 1.nl.pool.ntp.org >/dev/null 2>&1"
+
+- name: Setup crontab ( stats )
+  cron: name="stats" job="sleep 20; /usr/work/scripts/mon/stat.pl >>/dev/null 2>&1"
+
+- name: Setup crontab ( mon )
+  cron: name="monitoring" minute="*/5" job="/usr/work/scripts/mon/mon.pl -daemon >>/dev/null 2>&1"

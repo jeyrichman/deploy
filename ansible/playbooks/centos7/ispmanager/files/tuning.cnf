@@ -1,0 +1,43 @@
+[mysqld]
+bind-address = 127.0.0.1
+port = 3306
+myisam-recover
+skip-name-resolve
+key_buffer = 512M
+myisam_sort_buffer_size = 16M
+max_allowed_packet = 1M
+table_cache = 1024
+sort_buffer_size = 1M
+read_buffer_size = 1M
+thread_cache = 16
+query_cache_size= 64M
+query_cache_type= 1
+# Try number of CPU's*2 for thread_concurrency
+thread_concurrency = 4
+# flush all tables every day
+flush_time = 86400
+interactive_timeout = 600
+max_connections = 1024
+max_connect_errors = 1000
+max_join_size = 16M
+max_user_connections = 1000
+wait_timeout = 300
+max_heap_table_size=64M
+tmp_table_size=64M
+innodb_file_per_table
+innodb_buffer_pool_size = 128M
+collation-server = utf8_unicode_ci
+init-connect='SET NAMES utf8'
+character-set-server = utf8
+
+[client]
+default-character-set=utf8
+
+[mysql]
+default-character-set=utf8
+
+[myisamchk]
+key_buffer_size=512M
+sort_buffer_size=512M
+read_buffer_size=1M
+write_buffer_size=1M

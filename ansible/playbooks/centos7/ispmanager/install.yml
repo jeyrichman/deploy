@@ -1,0 +1,31 @@
+---
+- hosts: all
+
+  vars:
+    gpg_keys:
+      - http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+      - http://rpms.famillecollet.com/RPM-GPG-KEY-remi
+
+    repo_rpms:
+      - http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+      - http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
+      - http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
+
+    smartd_short_test_month: '..'
+    smartd_short_test_dom: '..'
+    smartd_short_test_dow: '.'
+    smartd_short_test_hour: 'random'
+
+    smartd_long_test_month: '..'
+    smartd_long_test_dom: '..'
+    smartd_long_test_dow: 'random'
+    smartd_long_test_hour: 'random'
+
+  tasks:
+    - assert: { that: "'{{ ansible_distribution_major_version }}' == '7' and '{{ ansible_os_family }}' == 'RedHat'" }
+
+    - include: tasks/updatesystem.yml
+    - include: tasks/basicutils.yml
+    - include: tasks/ispmanager.yml
+    - include: tasks/postispmanager.yml
+    - include: tasks/monitoring.yml

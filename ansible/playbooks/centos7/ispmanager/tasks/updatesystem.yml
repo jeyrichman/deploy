@@ -1,0 +1,12 @@
+- name: import gpg-keys
+  command: rpm --import {{ item }}
+  with_items: gpg_keys
+  ignore_errors: True
+
+- name: install repositories
+  yum: name={{ item }} state=installed
+  with_items: repo_rpms
+  ignore_errors: True
+
+- name: Install Updates for YUM
+  yum: name=* state=latest

@@ -1,0 +1,80 @@
+- name: Add iptables rule for 222 port
+  shell: /sbin/iptables -I INPUT -j ACCEPT -p tcp -m tcp --dport 222
+
+- name: Save iptables rules
+  shell: iptables-save > /etc/iptables/rules.v4 
+
+- name: Install ISPmanager
+  apt: pkg={{ item }} state=installed force=yes 
+  with_items:
+    - coremanager
+    - ispmanager-lite-common
+    - ispmanager-pkg-awstats
+    - ispmanager-pkg-bind
+    - ispmanager-pkg-dovecot
+    - ispmanager-pkg-exim
+    - ispmanager-pkg-httpd
+    - ispmanager-pkg-nginx
+    - ispmanager-pkg-mysql
+    - ispmanager-pkg-myadmin
+    - ispmanager-pkg-logrotate
+    - ispmanager-pkg-php
+#    - ispmanager-pkg-phpext-ioncube
+    - ispmanager-pkg-phpfpm
+    - ispmanager-pkg-proftpd
+
+- name: Change logo
+  get_url: url=http://data.king-support.com/distfiles/defaults/logo.png dest=/usr/local/mgr5/skins/orion/default/logo-ispmgr.png force=yes
+
+- name: Change brand
+  copy: src=files/brand_settings.xml dest=/usr/local/mgr5/etc/brand_settings.xml force=yes
+
+- name: Downloading brand archive
+  unarchive: src=files/local_4cadbeda6533.tar.gz dest=/usr/local/mgr5/skins/orion/ force=yes
+
+- name: Configure ISPmanager
+  shell: "{{ item }}"
+  with_items:
+      - "echo 'Option EULA' >> /usr/local/mgr5/etc/ispmgr.conf"
+      - "echo 'path DefaultHomeDir /home' >> /usr/local/mgr5/etc/ispmgr.conf"
+      - "echo 'path php_open_basedir none' >> /usr/local/mgr5/etc/ispmgr.conf"
+      - "/usr/sbin/userdel -r -f adminroot"
+      - "/usr/local/mgr5/sbin/mgrctl -m ispmgr preset.edit limit_ftp_users_enabled=on limit_domains_enabled=on limit_db_enabled=on  limit_db_users_enabled=on limit_webdomains_enabled=on limit_ssl=on limit_ssl_enabled=on limit_wsgi=0 limit_rails=0 limit_cgi=on limit_cgi_enabled=on limit_php_mode_mod=on limit_php_mode_mod_enabled=on limit_php_mode_cgi=on limit_php_mode_cgi_enabled=on limit_php_mode_fcgi_apache=on limit_php_mode_fcgi_apache_enabled=on limit_php_mode_fcgi_nginxfpm=on limit_php_mode_fcgi_nginxfpm_enabled=on limit_emaildomains_enabled=on limit_emails_enabled=on limit_shell=on limit_shell_enabled=on limit_charset_enabled=on limit_php_mode_enabled=on limit_dirindex=index.html index.php limit_dirindex_enabled=on php_enable=on name=Default level=16 apply=off limit_charset=UTF-8 limit_php_mode=php_mode_mod sok=ok"
+      - "/usr/local/mgr5/sbin/mgrctl -m ispmgr user.add name=adminroot preset=Default passwd={{ adminroot }} confirm={{ adminroot }} sok=ok"
+
+#- name: Add additional IPs
+#  shell: /usr/local/mgr5/sbin/mgrctl -m ispmgr ipaddrlist.edit sok=ok name={{ item }}
+#  with_items: "{{ additionalip }}"
+
+- name: Restart ISPmanager
+  shell: /usr/local/mgr5/sbin/mgrctl -m ispmgr --restart
+
+- name: Tuning MySQL
+  copy: src=files/tuning.cnf dest=/etc/mysql/conf.d/tuning.cnf force=yes
+
+- name: Restart  MySQL
+  service: name=mysql state=restarted
+
+- name: Tuning nginx
+  copy: src=files/nginx.conf dest=/etc/nginx/nginx.conf force=yes
+
+- name: Create directory /etc/nginx/vhosts/
+  file: path=/etc/nginx/vhosts/ state=directory mode=0755
+
+- name: Create virtualhost on 82 port ( nginx )
+  template: src=files/nginx82port.conf dest=/etc/nginx/vhosts/82port.conf owner=root group=root mode=0644
+
+- name: Restart nginx
+  service: name=nginx state=restarted
+
+- name: Enable php in apache
+  shell: /bin/sed -i 's#.*SetHandler application/x-httpd-php.*#     SetHandler application/x-httpd-php#' /etc/apache2/mods-available/php5.conf
+
+#- name: Tuning apache
+#  copy: src=files/httpd.conf dest=/etc/apache2/apache2.conf force=yes
+
+- name: Create virtualhost on 82 port ( apache )
+  copy: src=files/apache82port.conf dest=/etc/apache2/vhosts-default/82port.conf force=yes
+
+- name: Restart apache
+  service: name=apache2 state=restarted

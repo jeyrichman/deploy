@@ -1,0 +1,22 @@
+---
+- hosts: all
+
+  vars:
+      smartd_short_test_month: '..'
+      smartd_short_test_dom: '..'
+      smartd_short_test_dow: '.'
+      smartd_short_test_hour: 'random'
+
+      smartd_long_test_month: '..'
+      smartd_long_test_dom: '..'
+      smartd_long_test_dow: 'random'
+      smartd_long_test_hour: 'random'
+
+  tasks:
+   - assert: { that: "'{{ ansible_distribution_major_version }}' == '7' and '{{ ansible_os_family }}' == 'Debian'" }
+
+   - include: tasks/updatesystem.yml
+   - include: tasks/basicutils.yml
+   - include: tasks/ispmanager.yml
+   - include: tasks/postispmanager.yml
+   - include: tasks/monitoring.yml

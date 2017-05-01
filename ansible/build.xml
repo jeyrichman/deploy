@@ -1,0 +1,21 @@
+<project name="scripts_admin" basedir="." default="build">
+	<property name="doc_root" value="/home/sites/ansible/"/>
+        <target name="build" depends="upload">
+                <echo>BUILD OK</echo>
+		<echo message="Basedir is ${project.basedir}"/>
+        </target>
+	<target name="prepare">
+		<echo message="Prepare source code for syncing. Env ${env.type}"/>
+    </target>
+	<target name="upload" depends="prepare">
+		<echo>Uploading source code to each backend server</echo>
+		<foreach list="${backends}" param="backend" target="upload-each"/>
+	</target>
+	<target name="upload-each">
+		<echo message="Uploading source code to ${backend}"/>
+		<echo message="Remove forbidden files"/>
+		<delete dir="${project.basedir}/.git"/>
+		<exec checkreturn="true" logoutput="true" command="rsync -e 'ssh -p 222' -aHv --delete ${project.basedir}/ adminroot@${backend}:${doc_root}/ "/>
+		<ssh username="adminroot" privkeyfile="/var/lib/jenkins/.ssh/id_rsa" pubkeyfile="/var/lib/jenkins/.ssh/id_rsa.pub" port="222" host="${backend}" command="rm ${doc_root}/build.xml"/>
+	</target>
+</project>
