@@ -1,0 +1,123 @@
+#staging SSL 
+
+
+server {
+
+    listen 443 ssl;
+	ssl_certificate     ssl/nginx.crt;
+	ssl_certificate_key ssl/nginx.key;
+	ssl_protocols       TLSv1.1 TLSv1.2;
+	ssl_ciphers         HIGH:!aNULL:!MD5;
+
+	keepalive_timeout   60;
+	ssl_session_cache   shared:SSL:10m;
+	ssl_session_timeout 10m;
+    
+    charset utf-8;
+
+
+    server_name ~^(?P<w>www)\.(?P<project>.+)$;
+
+
+	set $wwwdir "";
+	set $projdir "";
+	set $is_https "";
+
+
+	#### checking if www.$project_name dir exists
+
+    if (!-d /var/www/html/$w.$project/web) {
+		set $wwwdir 'nowwwdir';
+    }
+
+	#### checking if $project_name dir exists
+
+    if (!-d /var/www/html/$project/web) {
+		set $projdir 'noprojectdir';
+    }
+
+
+	#### multiple condition - if ( ! $wwwdir && ! projdir ) then "site not found" 
+    set $wwwdir_projdir "$wwwdir::$projdir";
+
+    if ($wwwdir_projdir = "nowwwdir::noprojectdir"){
+		rewrite ^(.*)$ /notfound.html break;
+    }
+
+    #### if no www, but project found - redirect
+    if ($wwwdir = "nowwwdir"){
+		return 301 https://$project$request_uri;
+		break;
+    }
+
+
+
+    root /var/www/html/$w.$project/web;
+    include conf.d/default.loc; 
+
+}
+
+
+
+server {
+
+    listen 443 ssl;
+	ssl_certificate     ssl/nginx.crt;
+	ssl_certificate_key ssl/nginx.key;
+	ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers         HIGH:!aNULL:!MD5;
+
+	keepalive_timeout   60;
+	ssl_session_cache   shared:SSL:10m;
+	ssl_session_timeout 10m;
+
+    charset utf-8;
+    server_name ~^(?P<project>.+)$;
+
+
+	set $wwwdir "";
+	set $projdir "";
+	set $is_https "";
+
+
+	#### checking if www.$project_name dir exists
+
+    if (!-d /var/www/html/www.$project/web) {
+		set $wwwdir 'nowwwdir';
+    }
+
+	#### checking if $project_name dir exists
+
+    if (!-d /var/www/html/$project/web) {
+		set $projdir 'noprojectdir';
+    }
+
+
+	#### multiple condition - if ( ! $wwwdir && ! projdir ) then "site not found" 
+    set $wwwdir_projdir "$wwwdir::$projdir";
+
+    if ($wwwdir_projdir = "nowwwdir::noprojectdir"){
+		rewrite ^(.*)$ /notfound.html break;
+    }
+
+    #### if no project, but www found - redirect
+    if ($projdir = "noprojectdir"){
+		return 301 https://www.$project$request_uri;
+		break;
+    }
+
+
+
+
+
+
+    root /var/www/html/$project/web;
+    include conf.d/default.loc;
+}
+
+
+
+
+
+
+

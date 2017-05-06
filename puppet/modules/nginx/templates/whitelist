@@ -1,0 +1,9 @@
+geo $whitelist {
+    default 1;
+<% it=@whitelist.keys
+it.each do |site| -%>
+	<%=whitelist[site]%> 0; ###<%=site%> 
+<% end -%>
+}
+
+

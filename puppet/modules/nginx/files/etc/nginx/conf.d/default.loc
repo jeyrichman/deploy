@@ -1,0 +1,90 @@
+#### LOGGING ####
+
+access_log /var/log/nginx/access.log main;
+access_log syslog:server=graylog-local.uncomp.com:12301 graylog2_format;
+
+
+#### error pages ####
+
+error_page 429 /429.html;
+
+location = /429.html {
+    root /var/www/syspages;
+    internal;
+}
+
+
+
+#### DENY #####
+
+location ~ /\.git {
+ deny  all;
+ }
+
+location ~ /.svn/ {
+ deny all;
+ }
+
+location ~ /\. {
+    deny all;
+}
+
+#### SYSTEM ####
+
+location /notfound.html {
+    root /var/www/syspages;
+}
+
+
+#### STATICS ####
+
+location /(bundles|media) {
+
+    limit_req zone=static burst=100 nodelay; 
+    access_log off;
+    expires 30d;
+    try_files $uri @rewriteapp;
+}
+
+location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml|svg|ttf)$ {
+
+    limit_req zone=static burst=100 nodelay; 
+    access_log        off;
+    expires           360d;
+    if (!-e $request_filename) {
+       rewrite ^ /app.php last;
+    }
+}
+
+
+
+#### REWRITES ####
+
+
+rewrite ^/app\.php/?(.*)$ /$1 permanent;
+
+location /index$ {
+  rewrite ^(.*)$ / redirect;
+}
+
+
+location @rewriteapp {
+    rewrite ^(.*)$ /app.php/$1 last;
+}
+
+
+#### DEFAULT ####
+
+location / {
+    index app.php;
+    try_files $uri @rewriteapp;
+}
+
+
+location ~ ^/(app|app_dev|config)\.php(/|$) {
+    fastcgi_pass unix:/var/run/php5-fpm.sock;
+    fastcgi_split_path_info ^(.+\.php)(/.*)$;
+    include fastcgi_params;
+    fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param  HTTPS $is_https if_not_empty;
+}

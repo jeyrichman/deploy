@@ -1,0 +1,27 @@
+{
+
+	"rate_limit_white_list": {
+	    "internal-network" : "10.0.0.0/8",
+	    "internal-network-office" : "192.168.216.0/24",
+	    "localhost" : "127.0.0.1"
+    
+	},
+
+	"nginx_params": {
+		"fastcgi_send_timeout" : "1800",
+		"fastcgi_read_timeout" : "1800"
+
+	},
+
+	"php_params": {
+		"max_execution_time" : "1800",
+		"memory_limit" : "512M",
+		"request_terminate_timeout" : "1800s"
+
+	},
+
+	"memcached_params" : {
+		"mc_memory" : "128"
+	}
+
+}
