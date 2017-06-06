@@ -41,3 +41,4 @@ GIT_PROJECT=`echo $SITENAME | sed 's/\./\-/g'`
 check_dir
 create_dump
 create_deploy_repo
+done
