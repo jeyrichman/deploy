@@ -11,7 +11,8 @@ cat <<EOF >> out.txt
 			"domains" : { 
 			"$DOMAIN" : {
 				"le-ssl" : [ "www" ],
-				"ssl_disabled" : "true"
+				"ssl_disabled" : "true",
+				"force_ssl" : "false"
 				}				
 			}
 		},
