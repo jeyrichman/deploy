@@ -1,3 +1,5 @@
+#!/bin/bash
+
 WP_DIR='/var/www/html/*/'
 
 
