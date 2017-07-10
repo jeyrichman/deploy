@@ -1,7 +1,7 @@
 #!/bin/bash
 
 WP_DIR=/var/www/html/
-LIST=/home/ec2-user/list
+LIST=`ls -1 /var/www/html/`
 
 
 check_dir () {
@@ -23,7 +23,7 @@ check_domain_type () {
 
 run_for_all () {
    check_dir
-   for DOMAIN in `cat /home/ec2-user/list`;
+   for DOMAIN in $LIST;
 	do check_domain_type; done
 }
 
