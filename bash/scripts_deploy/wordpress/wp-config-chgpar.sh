@@ -1,4 +1,3 @@
-
 DOMAIN=`pwd | cut -d "/" -f 5 | sed 's/\./\-/g'`
 DB_USER=`cat wp-config.php | grep "DB_USER"  | awk "{print $2}"  | awk -F", '" '{print $2}' | awk -F"'" '{print $1}'`
 DB_PASSWORD=`cat wp-config.php | grep "DB_PASSWORD"  | awk "{print $2}"  | awk -F", '" '{print $2}' | awk -F"'" '{print $1}'`
