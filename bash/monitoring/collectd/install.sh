@@ -10,10 +10,10 @@ curl -o /opt/collectd/ --progress https://collectd.org/files/collectd-5.5.0.tar.
 cd /opt/collectd/collectd-* && make all install
 
 #Install Configuration
-git clone https://github.com/raboy/configurations.git 
-cp configurations/collectd/files/collectd.conf  /etc/collectd.conf
-cp configurations/collectd/files/iostat_collectd_plugin.rb /var/lib/zabbix/iostat_collectd_plugin.rb
-cp configurations/collectd/files/tcp.sh /var/lib/zabbix/tcp.sh
+git clone https://github.com/raboy/deploy.git 
+cp deploy/bash/monitoring/collectd/files/collectd.conf  /etc/collectd.conf
+cp deploy/bash/monitoring//collectd/files/iostat_collectd_plugin.rb /var/lib/zabbix/iostat_collectd_plugin.rb
+cp deploy/bash/monitoring/configurations/collectd/files/tcp.sh /var/lib/zabbix/tcp.sh
 cp /opt/collectd/collectd-*/contrib/redhat/init.d-collectd /etc/init.d/collectd
 chmod +x /etc/init.d/collectd
 chmod +x /var/lib/zabbix/*
