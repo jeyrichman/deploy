@@ -1,7 +1,7 @@
 #!/bin/bash
 
 WP_DIR=/var/www/html/
-LIST=`ls -1 /var/www/html/`
+LIST=`cat /home/ec2-user/list`
 
 
 check_dir () {
