@@ -4,10 +4,13 @@ yum install gcc perl-devel -y
 #Create dirs
 mkdir /opt/collectd/
 mkdir /var/lib/zabbix/
+mkdir /opt/collectd/
 
 #Install Collectd
-curl -o /opt/collectd/ --progress https://collectd.org/files/collectd-5.5.0.tar.gz | tar xz
-cd /opt/collectd/collectd-* && make all install
+wget -q https://collectd.org/files/collectd-5.5.0.tar.gz -O /opt/collectd/collectd-5.5.0.tar.gz
+tar xvfp /opt/collectd/collectd-5.5.0.tar.gz
+rm /opt/collectd/collectd-5.5.0.tar.gz
+cd /opt/collectd/collectd-* && ./configure && make all install
 
 #Install Configuration
 git clone https://github.com/raboy/deploy.git 
