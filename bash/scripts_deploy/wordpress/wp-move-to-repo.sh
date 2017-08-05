@@ -4,7 +4,8 @@
 GIT_TOKEN="826F_Xx3zPgiZo7MSQkx"
 LIST=`cat /home/ec2-user/list | awk '{print $1}'`
 WP_DIR=/var/www/html/
-DOMAIN_TYPE="wp-sites"
+DOMAIN_TYPE="html-sites"
+ID=6
 
 check_dir () {
 if [ -d "$WP_DIR" ]; then
@@ -30,7 +31,7 @@ fi
 
 create_deploy_repo () {
 cd $WP_DIR/${SITENAME} && #rm .bash
-curl --header "PRIVATE-TOKEN: $GIT_TOKEN" -X POST "http://satellites-git.uncomp.com/api/v3/projects?name=$GIT_PROJECT&namespace_id=2" 2>/dev/null &&
+curl --header "PRIVATE-TOKEN: $GIT_TOKEN" -X POST "http://satellites-git.uncomp.com/api/v3/projects?name=$GIT_PROJECT&namespace_id=$ID" 2>/dev/null &&
 git init && git remote add origin git@satellites-git.uncomp.com:$DOMAIN_TYPE/$GIT_PROJECT.git
 git add . &&
 git commit -m "Added $SITENAME" &&
